@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>三国Online：南鲁党争篇</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #e0e0e0;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 游戏标题 */
+        .game-title {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 28px;
+            font-weight: bold;
+            color: #f1c40f;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            border-bottom: 2px solid #444;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* 数值条容器 */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(0,0,0,0.3);
+            border-bottom: 1px solid #444;
+        }
+
+        /* 信任值条 */
+        .trust-bar-container {
+            flex: 1;
+            max-width: 300px;
+            margin-right: 40px;
+        }
+
+        .trust-label {
+            font-size: 14px;
+            color: #f1c40f;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .trust-bar {
+            height: 25px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 12px;
+            border: 2px solid #f1c40f;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .trust-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #f39c12, #f1c40f);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .trust-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+            font-weight: bold;
+            color: #2c3e50;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
+        }
+
+        /* 阵营倾向指针 */
+        .faction-container {
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .faction-label {
+            text-align: center;
+            font-size: 14px;
+            color: #e0e0e0;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .faction-bar {
+            height: 25px;
+            background: linear-gradient(90deg, #3498db 0%, #666 50%, #e74c3c 100%);
+            border-radius: 12px;
+            border: 2px solid #666;
+            position: relative;
+        }
+
+        .faction-pointer {
+            position: absolute;
+            top: -5px;
+            width: 6px;
+            height: 35px;
+            background: #fff;
+            border: 2px solid #333;
+            border-radius: 3px;
+            transition: left 0.5s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .faction-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
+        .prince-label { color: #3498db; }
+        .lu-label { color: #e74c3c; }
+
+        /* 事件卡片 */
+        .event-card {
+            max-width: 600px;
+            margin: 40px auto;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #444;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+        }
+
+        .event-title {
+            font-size: 20px;
+            color: #f1c40f;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .event-description {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            color: #e0e0e0;
+            text-align: center;
+        }
+
+        .event-choices {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .choice-btn {
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #666;
+            border-radius: 8px;
+            color: #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-align: left;
+            position: relative;
+        }
+
+        .choice-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: #f1c40f;
+            transform: translateY(-2px);
+        }
+
+        .choice-effects {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 12px;
+            color: #888;
+        }
+
+        .effect-tag {
+            display: inline-block;
+            padding: 2px 6px;
+            margin: 0 2px;
+            border-radius: 3px;
+            font-size: 10px;
+        }
+
+        .trust-plus { background: #27ae60; color: white; }
+        .trust-minus { background: #e74c3c; color: white; }
+        .prince-plus { background: #3498db; color: white; }
+        .lu-plus { background: #e74c3c; color: white; }
+
+        /* 金句弹窗 */
+        .quote-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .quote-content {
+            max-width: 80%;
+            text-align: center;
+            padding: 40px;
+            background: rgba(0,0,0,0.8);
+            border: 3px solid #f1c40f;
+            border-radius: 15px;
+        }
+
+        .quote-character {
+            font-size: 18px;
+            color: #f1c40f;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .quote-text {
+            font-size: 20px;
+            color: #e0e0e0;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        /* 开始界面 */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .start-title {
+            font-size: 36px;
+            color: #f1c40f;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .start-subtitle {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 18px;
+            background: linear-gradient(135deg, #f39c12, #f1c40f);
+            color: #2c3e50;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        /* 结局界面 */
+        .ending-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .ending-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .ending-description {
+            font-size: 16px;
+            color: #888;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        .restart-btn {
+            padding: 12px 30px;
+            font-size: 16px;
+            background: #666;
+            color: #e0e0e0;
+            border: 2px solid #888;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            background: #777;
+            border-color: #aaa;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .stats-container {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px;
+            }
+
+            .trust-bar-container {
+                margin-right: 0;
+                width: 100%;
+            }
+
+            .event-card {
+                margin: 20px;
+                padding: 20px;
+            }
+
+            .choice-btn {
+                padding: 12px 15px;
+                font-size: 13px;
+            }
+
+            .choice-effects {
+                position: static;
+                margin-top: 8px;
+                text-align: right;
+            }
+        }
+
+        /* 系统错误特效 */
+        .system-glitch {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                #000 0px,
+                #000 2px,
+                #fff 2px,
+                #fff 4px
+            );
+            z-index: 9999;
+            display: none;
+            animation: glitch 0.1s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            50% { transform: translateX(2px); }
+            75% { transform: translateX(-1px); }
+            100% { transform: translateX(1px); }
+        }
+
+        /* 系统提示 */
+        .system-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.95);
+            color: #00ff00;
+            padding: 20px 40px;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            z-index: 10000;
+            display: none;
+            text-align: center;
+        }
+
+        .system-message::before {
+            content: "[SYSTEM] ";
+            color: #ff0000;
+        }
+    </style>
+</head>
+<body>
+    <!-- 开始界面 -->
+    <div class="start-screen" id="startScreen">
+        <div class="start-title">三国Online：南鲁党争篇</div>
+        <div class="start-subtitle">
+            你是诸葛恪，东吴朝堂的淮泗职场精英。<br>
+            在太子党与鲁王党的夹缝中求生存，<br>
+            一个选择错误，就是一杯鸩酒的距离（对吧诸葛绰）。
+        </div>
+        <button class="start-btn" onclick="startGame()">开始游戏</button>
+    </div>
+
+    <!-- 游戏主界面 -->
+    <div class="game-main" id="gameMain" style="display: none;">
+        <div class="game-title">
+            三国Online：南鲁党争篇
+            <div class="subtitle">天才诸葛恪的职场生存指南</div>
+        </div>
+        
+        <!-- 数值显示区 -->
+        <div class="stats-container">
+            <!-- 信任值 -->
+            <div class="trust-bar-container">
+                <div class="trust-label">孙权信任值</div>
+                <div class="trust-bar">
+                    <div class="trust-fill" id="trustFill" style="width: 70%;">
+                        <div class="trust-value" id="trustValue">70</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 阵营倾向 -->
+            <div class="faction-container">
+                <div class="faction-label">阵营倾向</div>
+                <div class="faction-bar">
+                    <div class="faction-pointer" id="factionPointer" style="left: 50%;"></div>
+                </div>
+                <div class="faction-labels">
+                    <span class="prince-label">太子党</span>
+                    <span class="lu-label">鲁王党</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 事件卡片 -->
+        <div class="event-card" id="eventCard">
+            <div class="event-title" id="eventTitle">加载中...</div>
+            <div class="event-description" id="eventDescription">正在为您准备精彩的宫斗剧情...</div>
+            <div class="event-choices" id="eventChoices">
+                <!-- 选择按钮将在这里动态生成 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 金句弹窗 -->
+    <div class="quote-overlay" id="quoteOverlay">
+        <div class="quote-content">
+            <div class="quote-character" id="quoteCharacter"></div>
+            <div class="quote-text" id="quoteText"></div>
+        </div>
+    </div>
+
+    <!-- 结局界面 -->
+    <div class="ending-screen" id="endingScreen">
+        <div class="ending-title" id="endingTitle"></div>
+        <div class="ending-description" id="endingDescription"></div>
+        <button class="restart-btn" onclick="restartGame()">重新开始</button>
+    </div>
+
+    <!-- 系统特效 -->
+    <div class="system-glitch" id="systemGlitch"></div>
+    <div class="system-message" id="systemMessage"></div>
+
+    <script src="game-fixed.js"></script>
+</body>
+</html>
